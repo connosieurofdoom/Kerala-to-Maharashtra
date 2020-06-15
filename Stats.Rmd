@@ -9,6 +9,7 @@ output:
 
 ```{r library}
 library(tidyverse)
+library(ggplot2)
 ```
 
 # Probability
@@ -182,10 +183,17 @@ Kerala <- c(hDataK$NumPrimaryHealthCenters_HMIS, hDataK$NumCommunityHealthCenter
 
 Maharashtra <- c(hDataM$NumPrimaryHealthCenters_HMIS, hDataM$NumCommunityHealthCenters_HMIS, hDataM$NumSubDistrictHospitals_HMIS, hDataM$NumDistrictHospitals_HMIS, hDataM$TotalPublicHealthFacilities_HMIS, hDataM$NumPublicBeds_HMIS, hDataM$NumRuralHospitals_NHP18, hDataM$NumRuralBeds_NHP18, hDataM$NumUrbanHospitals_NHP18, hDataM$NumUrbanBeds_NHP18)
 
-hDataKM <- rbind( Kerala, Maharashtra)
+```
 
-barplot(hDataKM, beside=T, names.arg = c("PrimaryHC", "CommunityHC", "SubDistrictHospitals", "DistrictHospitals", "TotalPublicHealthFacilities", "PublicBeds", "RuralHospitals", "RuralBeds", "UrbanHospitals", "UrbanBeds"), args.legend = list(title = "State", x = "topright", cex = .7), col = c("darkgreen", "red") ,las=2.5, cex.axis=1, font=1)
+```{r}
+labels <- rep(c("PrimaryHC", "CommunityHC", "SubDistrictHospitals", "DistrictHospitals", "TotalPublicHealthFacilities", "PublicBeds", "RuralHospitals", "RuralBeds", "UrbanHospitals", "UrbanBeds"),2)
 
+values <- c(Kerala,Maharashtra)
+
+d <- data.frame(labels, values)
+state <- c(rep("Kerala",10), rep("Maharashtra", 10))
+p <- ggplot(d, aes(labels, values)) + geom_bar(stat = "identity", aes(fill = state), position = "dodge") +  ggtitle("Hospital Beds") + theme(axis.text.x = element_text(angle = 60, hjust = 1))
+p
 
 ```
 
@@ -200,7 +208,7 @@ idC <- read.csv("IndividualDetails.csv")
 nP <- as.numeric(count(filter(idC, detected_district == "Pune")))
 nM <- as.numeric(count(filter(idC, detected_district == "Kannur")))
 
-cat("Number of Cases in Pune:", nP, "Number of Cases in Kannur:", nM, fill = TRUE)
+cat("Number of Cases in Pune:", nP,"\n", "Number of Cases in Kannur:", nM, fill = TRUE)
 
 ```
 
