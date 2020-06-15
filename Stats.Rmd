@@ -1,0 +1,207 @@
+---
+title: "Statistical evidence for or against traveling to Pune"
+output:
+  html_document:
+    df_print: paged
+---
+
+# Library imports
+
+```{r library}
+library(tidyverse)
+```
+
+# Probability
+
+```{r}
+N <- 9426959 # Population of Pune
+area <- 331 # in km^2
+pd <- N/area # Population Density
+npp <- 1348 # Number of positive cases of COVID-19 in Pune
+
+Pp <- npp/N # Probability that any random person in Pune is infected
+
+cat("Probability that any random person in Pune is infected: ",Pp)
+
+```
+
+
+```{r}
+pGh <- 2109 #Population of Ghorpadi
+pKh <- 2036 #Population of Kharadi
+
+cat("Population exposed to every day on trip from Ghorpadi to Kharadi: ", pGh + pKh )
+
+```
+
+## Maharashtra Data
+```{r}
+nM <- 101000 # Confirmed
+nR <- 47796 # Recovered
+nD <- 3717 # Deaths
+
+nP <- 11420000
+
+nMaharashtra <- (nM+nR+nD)/nP # Probability of infection in Maharashtra
+
+cat("Probability of infection in Maharashtra: ",nMaharashtra)
+```
+
+## Karnataka Data
+```{r}
+nM <- 6516 
+nR <- 3440
+nD <- 79
+
+nP <- 641000
+
+nKarnataka <- (nM+nR+nD)/nP # Probability of infection in Karnata
+
+cat("Probability of infection in Karnataka: ",nKarnataka)
+```
+
+## Probability of infection during travel
+```{r}
+nMaharashtra + nKarnataka
+```
+
+
+# Age group wise distribution of infection
+
+```{r}
+color_blind_friendly_cols <- c("#999999", "#E69F00" , "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+AgeGroupDetails <- read.csv(file = "AgeGroupDetails.csv")
+
+
+barplot(AgeGroupDetails$TotalCases, names.arg = AgeGroupDetails$AgeGroup, xlab = "AgeGroups", ylab = "TotalCases", col = color_blind_friendly_cols,las=2)
+```
+
+This graph shows that the age group of 20-29 contains the most number of infections.
+
+# Statewise distribution of infection
+
+```{r}
+covid19 <- read.csv(file = "covid_19_india.csv")
+```
+
+
+```{r echo=TRUE}
+c2 <- covid19 %>% group_by(State.UnionTerritory) %>%
+  filter(Date == max(Date)) %>% select(State.UnionTerritory, Confirmed, Cured, Deaths) %>% mutate(Total = Confirmed + Cured + Deaths) %>% arrange(desc(Total))
+
+c2
+```
+
+# Maharashtra vs Kerala Ranking
+
+```{r message=FALSE, warning=FALSE}
+rTMah <- which(c2$State.UnionTerritory == "Maharashtra")
+rTKer <- which(c2$State.UnionTerritory == "Kerala")
+
+cat("Maharashtra's Rank in Total cases: ",rTMah,"Kerala's Rank in Total cases: ",rTKer, fill = TRUE)
+```
+
+```{r}
+c3 <- c2 %>% arrange(desc(Deaths))
+c4 <- c2 %>% arrange(desc(Confirmed))
+```
+
+
+```{r}
+
+rDMah <- which(c3$State.UnionTerritory == "Maharashtra")
+rDKer <- which(c3$State.UnionTerritory == "Kerala")
+
+
+cat("Maharashtra's Rank in Deaths: ",rDMah, "Kerala's Rank in Deaths: ",rDKer, fill = TRUE)
+```
+
+```{r}
+rCMah <- which(c4$State.UnionTerritory == "Maharashtra")
+rCKer <- which(c4$State.UnionTerritory == "Kerala")
+
+cat("Maharashtra's Rank in Confirmed cases: ",rCMah ,"Kerala's Rank in Confirmed cases: ",rCKer, fill = TRUE)
+```
+
+
+# Time Series analysis
+
+## Total deaths
+
+```{r  fig.height=10, fig.width=40}
+covid19 %>% mutate(Date = as.Date(Date, format = "%d/%m/%Y") ) %>% filter(State.UnionTerritory %in% c("Maharashtra", "Kerala"), !is.na(Deaths), !is.na(Date))  %>%
+    ggplot(aes(Date, Deaths, col = State.UnionTerritory)) + geom_point() +
+    geom_line() + theme(axis.text.x = element_text(angle = 60, hjust = 1)) 
+```
+
+As observed the graph for Maharashtra is rising exponentially whereas Kerala is constant. This is evidence that Kerala is a much safer state as of now in terms of Corona virus spread for Deaths.
+
+
+## Confirmed Cases
+
+```{r  fig.height=10, fig.width=40}
+
+covid19 %>% mutate(Date = as.Date(Date, format = "%d/%m/%Y") ) %>% filter(State.UnionTerritory %in% c("Maharashtra", "Kerala"), !is.na(Confirmed), !is.na(Date))  %>%
+    ggplot(aes(Date, Confirmed, col = State.UnionTerritory)) + geom_point() +
+    geom_line() + theme(axis.text.x = element_text(angle = 60, hjust = 1)) 
+
+```
+As observed the graph for Maharashtra is rising exponentially whereas Kerala is constant. This is evidence that Kerala is a much safer state as of now in terms of Corona virus spread for confirmed cases.
+
+
+## Total Cases
+
+```{r  fig.height=10, fig.width=40}
+covid19 %>% mutate(Date = as.Date(Date, format = "%d/%m/%Y"), Total = (Confirmed + Deaths + Cured) ) %>% filter(State.UnionTerritory %in% c("Maharashtra", "Kerala"), !is.na(Total), !is.na(Date))  %>%
+    ggplot(aes(Date, Total, col = State.UnionTerritory)) + geom_point() +
+    geom_line() + theme(axis.text.x = element_text(angle = 60, hjust = 1)) 
+
+```
+
+
+As observed the graph for Maharashtra is rising exponentially whereas Kerala is constant. This is evidence that Kerala is a much safer state as of now in terms of Corona virus spread for Total cases.
+
+
+
+
+# Hospital Beds Data
+
+```{r}
+hData <- read.csv("HospitalBedsIndia.csv")
+
+```
+
+
+```{r}
+hDataK <- filter(hData, State.UT == "Kerala")
+hDataM <- filter(hData, State.UT == "Maharashtra")
+
+Kerala <- c(hDataK$NumPrimaryHealthCenters_HMIS, hDataK$NumCommunityHealthCenters_HMIS, hDataK$NumSubDistrictHospitals_HMIS, hDataK$NumDistrictHospitals_HMIS, hDataK$TotalPublicHealthFacilities_HMIS, hDataK$NumPublicBeds_HMIS, hDataK$NumRuralHospitals_NHP18, hDataK$NumRuralBeds_NHP18, hDataK$NumUrbanHospitals_NHP18, hDataK$NumUrbanBeds_NHP18)
+
+
+Maharashtra <- c(hDataM$NumPrimaryHealthCenters_HMIS, hDataM$NumCommunityHealthCenters_HMIS, hDataM$NumSubDistrictHospitals_HMIS, hDataM$NumDistrictHospitals_HMIS, hDataM$TotalPublicHealthFacilities_HMIS, hDataM$NumPublicBeds_HMIS, hDataM$NumRuralHospitals_NHP18, hDataM$NumRuralBeds_NHP18, hDataM$NumUrbanHospitals_NHP18, hDataM$NumUrbanBeds_NHP18)
+
+hDataKM <- rbind( Kerala, Maharashtra)
+
+barplot(hDataKM, beside=T, names.arg = c("PrimaryHC", "CommunityHC", "SubDistrictHospitals", "DistrictHospitals", "TotalPublicHealthFacilities", "PublicBeds", "RuralHospitals", "RuralBeds", "UrbanHospitals", "UrbanBeds"), args.legend = list(title = "State", x = "topright", cex = .7), col = c("darkgreen", "red") ,las=2.5, cex.axis=1, font=1)
+
+
+```
+
+This displays that Kerala has lesser hospital facility than Maharashtra and yet, the number of cases is greater in Maharashtra indicating that the conditions for transmission is more suitable in Maharahshtra as opposed to Kerala.
+
+
+# Case details
+
+```{r}
+idC <- read.csv("IndividualDetails.csv")
+
+nP <- as.numeric(count(filter(idC, detected_district == "Pune")))
+nM <- as.numeric(count(filter(idC, detected_district == "Kannur")))
+
+cat("Number of Cases in Pune:", nP, "Number of Cases in Kannur:", nM, fill = TRUE)
+
+```
+
+This is also evidence that Kannur is safer than Pune.
